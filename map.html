@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>World Map: Fatherland vs Motherland vs Complicated</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #aad3df;
+    }
+
+    #map {
+      height: 100%;
+      width: 100%;
+      background: #aad3df;
+    }
+
+    .info-panel {
+      padding: 10px 14px;
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+      border-radius: 6px;
+      min-width: 220px;
+      line-height: 1.5;
+    }
+
+    .info-panel h4 {
+      margin: 0 0 6px 0;
+      color: #1a1a1a;
+      font-size: 15px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 4px;
+    }
+
+    .legend {
+      line-height: 24px;
+      color: #333;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .legend i {
+      width: 16px;
+      height: 16px;
+      float: left;
+      margin-right: 8px;
+      margin-top: 3px;
+      border-radius: 2px;
+      border: 1px solid rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  // Complete metadata keyed by ISO3 and Common Name aliases
+  const countryData = {
+    // FATHERLAND (type: 1)
+    "ALB": { name: "Albania", lang: "Albanian", word: "Atdhe", type: 1 },
+    "ARM": { name: "Armenia", lang: "Armenian", word: "Hayrenik (Հայրենիք)", type: 1 },
+    "AUT": { name: "Austria", lang: "German", word: "Vaterland", type: 1 },
+    "BEL": { name: "Belgium", lang: "Dutch", word: "Vaderland", type: 1 },
+    "CHN": { name: "China", lang: "Mandarin", word: "Zǔguó (祖国)", type: 1 },
+    "DNK": { name: "Denmark", lang: "Danish", word: "Fædreland", type: 1 },
+    "EST": { name: "Estonia", lang: "Estonian", word: "Isamaa", type: 1 },
+    "FIN": { name: "Finland", lang: "Finnish", word: "Isänmaa", type: 1 },
+    "DEU": { name: "Germany", lang: "German", word: "Vaterland", type: 1 },
+    "ISL": { name: "Iceland", lang: "Icelandic", word: "Föðurland", type: 1 },
+    "JPN": { name: "Japan", lang: "Japanese", word: "Sokoku (祖国)", type: 1 },
+    "KAZ": { name: "Kazakhstan", lang: "Kazakh", word: "Ata Meken (Атамекен)", type: 1 },
+    "KGZ": { name: "Kyrgyzstan", lang: "Kyrgyz", word: "Ata Jurt (Ата Журт)", type: 1 },
+    "LVA": { name: "Latvia", lang: "Latvian", word: "Tēvzeme", type: 1 },
+    "LSO": { name: "Lesotho", lang: "Sesotho", word: "Naha ea bo-ntat'a rona", type: 1 },
+    "LIE": { name: "Liechtenstein", lang: "German", word: "Vaterland", type: 1 },
+    "LTU": { name: "Lithuania", lang: "Lithuanian", word: "Tėvynė", type: 1 },
+    "LUX": { name: "Luxembourg", lang: "Luxembourgish", word: "Heemecht / Pappeland", type: 1 },
+    "MDG": { name: "Madagascar", lang: "Malagasy", word: "Tanindrazana", type: 1 },
+    "MWI": { name: "Malawi", lang: "Chichewa", word: "Dziko la makolo", type: 1 },
+    "MLI": { name: "Mali", lang: "Bambara", word: "Faso", type: 1 },
+    "NGA": { name: "Nigeria", lang: "English", word: "Fatherland", type: 1 },
+    "PRK": { name: "North Korea", lang: "Korean", word: "Joguk (조국)", type: 1 },
+    "MKD": { name: "North Macedonia", lang: "Macedonian", word: "Tatkovina (Татковина)", type: 1 },
+    "NOR": { name: "Norway", lang: "Norwegian", word: "Fedreland", type: 1 },
+    "RWA": { name: "Rwanda", lang: "Kinyarwanda", word: "Gakondo", type: 1 },
+    "SRB": { name: "Serbia", lang: "Serbian", word: "Otadžbina (Отаџбина)", type: 1 },
+    "ZAF": { name: "South Africa", lang: "Zulu", word: "Izwe lobaba", type: 1 },
+    "KOR": { name: "South Korea", lang: "Korean", word: "Joguk (조국)", type: 1 },
+    "CHE": { name: "Switzerland", lang: "German", word: "Vaterland", type: 1 },
+    "TGO": { name: "Togo", lang: "French", word: "Terre de nos aïeux", type: 1 },
+    "ZWE": { name: "Zimbabwe", lang: "Shona", word: "Nyika yamadzibaba", type: 1 },
+
+    // MOTHERLAND (type: 2)
+    "AFG": { name: "Afghanistan", lang: "Dari", word: "Madar-e Watan", type: 2 },
+    "DZA": { name: "Algeria", lang: "Arabic", word: "Al-Watan al-Umm", type: 2 },
+    "ATG": { name: "Antigua and Barbuda", lang: "English", word: "Motherland", type: 2 },
+    "AUS": { name: "Australia", lang: "English", word: "Mother Country", type: 2 },
+    "AZE": { name: "Azerbaijan", lang: "Azerbaijani", word: "Ana Vətən", type: 2 },
+    "BHS": { name: "Bahamas", lang: "English", word: "Motherland", type: 2 },
+    "BHR": { name: "Bahrain", lang: "Arabic", word: "Al-Watan al-Umm", type: 2 },
+    "BGD": { name: "Bangladesh", lang: "Bengali", word: "Matribhumi (মাতৃভূমি)", type: 2 },
+    "BRB": { name: "Barbados", lang: "English", word: "Motherland", type: 2 },
+    "BLR": { name: "Belarus", lang: "Russian", word: "Rodina-mat (Родина-мать)", type: 2 },
+    "BLZ": { name: "Belize", lang: "English", word: "Motherland", type: 2 },
+    "BTN": { name: "Bhutan", lang: "Dzongkha", word: "Gyalkhab", type: 2 },
+    "BIH": { name: "Bosnia and Herzegovina", lang: "Bosnian", word: "Domovina", type: 2 },
+    "BWA": { name: "Botswana", lang: "Setswana", word: "Lefatshe la rona", type: 2 },
+    "BRN": { name: "Brunei", lang: "Malay", word: "Ibu Pertiwi", type: 2 },
+    "BGR": { name: "Bulgaria", lang: "Bulgarian", word: "Rodina (Родина)", type: 2 },
+    "BFA": { name: "Burkina Faso", lang: "Mooré", word: "Tēnga", type: 2 },
+    "BDI": { name: "Burundi", lang: "Kirundi", word: "Uburundi", type: 2 },
+    "KHM": { name: "Cambodia", lang: "Khmer", word: "Matoophum (មាតុភូមិ)", type: 2 },
+    "CAN": { name: "Canada", lang: "English", word: "Mother Country / Homeland", type: 2 },
+    "CAF": { name: "Central African Republic", lang: "Sango", word: "Ködörö", type: 2 },
+    "COM": { name: "Comoros", lang: "Comorian", word: "Wasi", type: 2 },
+    "HRV": { name: "Croatia", lang: "Croatian", word: "Domovina", type: 2 },
+    "CZE": { name: "Czechia", lang: "Czech", word: "Vlast", type: 2 },
+    "DMA": { name: "Dominica", lang: "English", word: "Motherland", type: 2 },
+    "EGY": { name: "Egypt", lang: "Arabic", word: "Umm al-Dunya", type: 2 },
+    "ERI": { name: "Eritrea", lang: "Tigrinya", word: "Adeba / Ady", type: 2 },
+    "SWZ": { name: "Eswatini", lang: "Swazi", word: "Live letfu", type: 2 },
+    "ETH": { name: "Ethiopia", lang: "Oromo", word: "Biyya Haadhaa", type: 2 },
+    "FJI": { name: "Fiji", lang: "English", word: "Motherland", type: 2 },
+    "GMB": { name: "Gambia", lang: "English", word: "The Motherland", type: 2 },
+    "GEO": { name: "Georgia", lang: "Georgian", word: "Dedamitsa / Samshoblo", type: 2 },
+    "GHA": { name: "Ghana", lang: "English", word: "Motherland", type: 2 },
+    "GRD": { name: "Grenada", lang: "English", word: "Motherland", type: 2 },
+    "GUY": { name: "Guyana", lang: "English", word: "Motherland", type: 2 },
+    "HTI": { name: "Haiti", lang: "Haitian Creole", word: "Manman Cheri", type: 2 },
+    "HUN": { name: "Hungary", lang: "Hungarian", word: "Szülőföld / Haza", type: 2 },
+    "IND": { name: "India", lang: "Hindi", word: "Matribhumi (मातृभूमि) / Bharat Mata", type: 2 },
+    "IDN": { name: "Indonesia", lang: "Indonesian", word: "Ibu Pertiwi", type: 2 },
+    "IRN": { name: "Iran", lang: "Persian", word: "Madar-e Vatan", type: 2 },
+    "IRQ": { name: "Iraq", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "IRL": { name: "Ireland", lang: "English", word: "Mother Ireland", type: 2 },
+    "ISR": { name: "Israel", lang: "Hebrew", word: "Moledet (מוֹלֶדֶת)", type: 2 },
+    "JAM": { name: "Jamaica", lang: "English", word: "Motherland", type: 2 },
+    "JOR": { name: "Jordan", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "KEN": { name: "Kenya", lang: "Swahili", word: "Nchi ya Mama", type: 2 },
+    "KIR": { name: "Kiribati", lang: "Gilbertese", word: "Aba", type: 2 },
+    "KWT": { name: "Kuwait", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "LAO": { name: "Laos", lang: "Lao", word: "Meuang Phou-khao", type: 2 },
+    "LBN": { name: "Lebanon", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "LBR": { name: "Liberia", lang: "English", word: "Motherland", type: 2 },
+    "LBY": { name: "Libya", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "MYS": { name: "Malaysia", lang: "Malay", word: "Ibu Pertiwi", type: 2 },
+    "MDV": { name: "Maldives", lang: "Dhivehi", word: "Maa Raajje", type: 2 },
+    "MHL": { name: "Marshall Islands", lang: "Marshallese", word: "Aelōn̄ in Ad", type: 2 },
+    "MRT": { name: "Mauritania", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "MNG": { name: "Mongolia", lang: "Mongolian", word: "Ekh Oron (Эх орон)", type: 2 },
+    "MNE": { name: "Montenegro", lang: "Montenegrin", word: "Domovina", type: 2 },
+    "MAR": { name: "Morocco", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "MMR": { name: "Myanmar", lang: "Burmese", word: "Mibakyei-zuh-shin Pyi", type: 2 },
+    "NAM": { name: "Namibia", lang: "English", word: "Motherland", type: 2 },
+    "NRU": { name: "Nauru", lang: "English", word: "Motherland", type: 2 },
+    "NPL": { name: "Nepal", lang: "Nepali", word: "Matribhumi (मातृभूमि)", type: 2 },
+    "NZL": { name: "New Zealand", lang: "English / Māori", word: "Motherland / Whenua", type: 2 },
+    "NER": { name: "Niger", lang: "Hausa", word: "Kasar haihuwa", type: 2 },
+    "OMN": { name: "Oman", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "PAK": { name: "Pakistan", lang: "Urdu", word: "Madar-e-Watan (مادرِ وطن)", type: 2 },
+    "PLW": { name: "Palau", lang: "Palauan", word: "Beluu", type: 2 },
+    "PSE": { name: "Palestine", lang: "Arabic", word: "Al-Ard al-Umm", type: 2 },
+    "PNG": { name: "Papua New Guinea", lang: "Tok Pisin", word: "Mama Graun", type: 2 },
+    "PHL": { name: "Philippines", lang: "Tagalog", word: "Inang Bayan", type: 2 },
+    "QAT": { name: "Qatar", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "RUS": { name: "Russia", lang: "Russian", word: "Rodina-mat (Родина-мать)", type: 2 },
+    "KNA": { name: "Saint Kitts and Nevis", lang: "English", word: "Motherland", type: 2 },
+    "LCA": { name: "Saint Lucia", lang: "English", word: "Motherland", type: 2 },
+    "VCT": { name: "Saint Vincent and the Grenadines", lang: "English", word: "Motherland", type: 2 },
+    "WSM": { name: "Samoa", lang: "Samoan", word: "Nuu Fanau", type: 2 },
+    "SAU": { name: "Saudi Arabia", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "SEN": { name: "Senegal", lang: "Wolof", word: "Réew", type: 2 },
+    "SYC": { name: "Seychelles", lang: "Seychellois Creole", word: "Manman Sesel", type: 2 },
+    "SLE": { name: "Sierra Leone", lang: "English", word: "Motherland", type: 2 },
+    "SGP": { name: "Singapore", lang: "English", word: "Motherland", type: 2 },
+    "SVK": { name: "Slovakia", lang: "Slovak", word: "Vlasť", type: 2 },
+    "SVN": { name: "Slovenia", lang: "Slovenian", word: "Domovina", type: 2 },
+    "SLB": { name: "Solomon Islands", lang: "English", word: "Motherland", type: 2 },
+    "SOM": { name: "Somalia", lang: "Somali", word: "Dhulka Hooyo", type: 2 },
+    "SSD": { name: "South Sudan", lang: "English", word: "Motherland", type: 2 },
+    "LKA": { name: "Sri Lanka", lang: "Sinhala", word: "Mawbima (මව්බිම)", type: 2 },
+    "SDN": { name: "Sudan", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "SUR": { name: "Suriname", lang: "Sranan Tongo", word: "Mama Sranan", type: 2 },
+    "SWE": { name: "Sweden", lang: "Swedish", word: "Fosterland", type: 2 },
+    "SYR": { name: "Syria", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "TJK": { name: "Tajikistan", lang: "Tajik", word: "Modar-Vatan", type: 2 },
+    "TZA": { name: "Tanzania", lang: "Swahili", word: "Mama Tanzania", type: 2 },
+    "THA": { name: "Thailand", lang: "Thai", word: "Phaendin Mae (แผ่นดินแม่)", type: 2 },
+    "TLS": { name: "Timor-Leste", lang: "Tetum", word: "Rainan", type: 2 },
+    "TON": { name: "Tonga", lang: "Tongan", word: "Fonua", type: 2 },
+    "TTO": { name: "Trinidad and Tobago", lang: "English", word: "Motherland", type: 2 },
+    "TUN": { name: "Tunisia", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "TUR": { name: "Turkey", lang: "Turkish", word: "Anavatan", type: 2 },
+    "TKM": { name: "Turkmenistan", lang: "Turkmen", word: "Ene Toprak", type: 2 },
+    "TUV": { name: "Tuvalu", lang: "Tuvaluan", word: "Fenua", type: 2 },
+    "UGA": { name: "Uganda", lang: "English", word: "Motherland", type: 2 },
+    "ARE": { name: "United Arab Emirates", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "GBR": { name: "United Kingdom", lang: "English", word: "Mother Country", type: 2 },
+    "USA": { name: "United States of America", lang: "English", word: "Mother Country / Homeland", type: 2 },
+    "UZB": { name: "Uzbekistan", lang: "Uzbek", word: "Ona Vatan", type: 2 },
+    "VUT": { name: "Vanuatu", lang: "Bislama", word: "Mama Graon", type: 2 },
+    "VNM": { name: "Vietnam", lang: "Vietnamese", word: "Đất Mẹ", type: 2 },
+    "YEM": { name: "Yemen", lang: "Arabic", word: "Al-Watan", type: 2 },
+    "ZMB": { name: "Zambia", lang: "English", word: "Motherland", type: 2 },
+
+    // COMPLICATED (type: 3)
+    "AND": { name: "Andorra", lang: "Catalan", word: "Pàtria (fem. from pater)", type: 3 },
+    "AGO": { name: "Angola", lang: "Portuguese", word: "Pátria", type: 3 },
+    "ARG": { name: "Argentina", lang: "Spanish", word: "Patria", type: 3 },
+    "BEN": { name: "Benin", lang: "French", word: "Patrie (la patrie)", type: 3 },
+    "BOL": { name: "Bolivia", lang: "Spanish", word: "Patria", type: 3 },
+    "BRA": { name: "Brazil", lang: "Portuguese", word: "Pátria / Pátria-Mãe", type: 3 },
+    "CPV": { name: "Cabo Verde", lang: "Portuguese", word: "Pátria", type: 3 },
+    "CMR": { name: "Cameroon", lang: "French", word: "Patrie", type: 3 },
+    "TCD": { name: "Chad", lang: "French", word: "Patrie", type: 3 },
+    "CHL": { name: "Chile", lang: "Spanish", word: "Patria", type: 3 },
+    "COL": { name: "Colombia", lang: "Spanish", word: "Patria", type: 3 },
+    "COG": { name: "Republic of Congo", lang: "French", word: "Patrie", type: 3 },
+    "COD": { name: "Democratic Republic of the Congo", lang: "French", word: "Patrie", type: 3 },
+    "CRI": { name: "Costa Rica", lang: "Spanish", word: "Patria", type: 3 },
+    "CUB": { name: "Cuba", lang: "Spanish", word: "Patria", type: 3 },
+    "CYP": { name: "Cyprus", lang: "Greek", word: "Patrida (Πατρίδα)", type: 3 },
+    "DJI": { name: "Djibouti", lang: "French", word: "Patrie", type: 3 },
+    "DOM": { name: "Dominican Republic", lang: "Spanish", word: "Patria", type: 3 },
+    "ECU": { name: "Ecuador", lang: "Spanish", word: "Patria", type: 3 },
+    "SLV": { name: "El Salvador", lang: "Spanish", word: "Patria", type: 3 },
+    "GNQ": { name: "Equatorial Guinea", lang: "Spanish", word: "Patria", type: 3 },
+    "FRA": { name: "France", lang: "French", word: "Patrie (la patrie)", type: 3 },
+    "GAB": { name: "Gabon", lang: "French", word: "Patrie", type: 3 },
+    "GRC": { name: "Greece", lang: "Greek", word: "Patrida (Πατρίδα)", type: 3 },
+    "GTM": { name: "Guatemala", lang: "Spanish", word: "Patria", type: 3 },
+    "GIN": { name: "Guinea", lang: "French", word: "Patrie", type: 3 },
+    "GNB": { name: "Guinea-Bissau", lang: "Portuguese", word: "Pátria", type: 3 },
+    "VAT": { name: "Holy See", lang: "Italian", word: "Patria", type: 3 },
+    "HND": { name: "Honduras", lang: "Spanish", word: "Patria", type: 3 },
+    "ITA": { name: "Italy", lang: "Italian", word: "Patria (la patria)", type: 3 },
+    "CIV": { name: "Ivory Coast", lang: "French", word: "Patrie", type: 3 },
+    "MLT": { name: "Malta", lang: "Maltese", word: "Patrija", type: 3 },
+    "MUS": { name: "Mauritius", lang: "French Creole", word: "Mama Patrie", type: 3 },
+    "MEX": { name: "Mexico", lang: "Spanish", word: "Patria / Madre Patria", type: 3 },
+    "MDA": { name: "Moldova", lang: "Romanian", word: "Patrie", type: 3 },
+    "MCO": { name: "Monaco", lang: "French", word: "Patrie", type: 3 },
+    "MOZ": { name: "Mozambique", lang: "Portuguese", word: "Pátria", type: 3 },
+    "NIC": { name: "Nicaragua", lang: "Spanish", word: "Patria", type: 3 },
+    "PAN": { name: "Panama", lang: "Spanish", word: "Patria", type: 3 },
+    "PRY": { name: "Paraguay", lang: "Spanish", word: "Patria", type: 3 },
+    "PER": { name: "Peru", lang: "Spanish", word: "Patria", type: 3 },
+    "POL": { name: "Poland", lang: "Polish", word: "Ojczyzna (fem. from ojciec)", type: 3 },
+    "PRT": { name: "Portugal", lang: "Portuguese", word: "Pátria", type: 3 },
+    "ROU": { name: "Romania", lang: "Romanian", word: "Patrie", type: 3 },
+    "SMR": { name: "San Marino", lang: "Italian", word: "Patria", type: 3 },
+    "STP": { name: "Sao Tome and Principe", lang: "Portuguese", word: "Pátria", type: 3 },
+    "ESP": { name: "Spain", lang: "Spanish", word: "Patria / Madre Patria", type: 3 },
+    "UKR": { name: "Ukraine", lang: "Ukrainian", word: "Bat'kivshchyna (Батьківщина)", type: 3 },
+    "URY": { name: "Uruguay", lang: "Spanish", word: "Patria", type: 3 },
+    "VEN": { name: "Venezuela", lang: "Spanish", word: "Patria", type: 3 }
+  };
+
+  // Helper matching function across any GeoJSON property format
+  function lookup(props) {
+    if (!props) return null;
+    const candidates = [
+      props.ISO_A3, props.iso_a3, props.adm0_a3, props.ADM0_A3,
+      props.ISO3, props.iso3, props.id, props.iso_a2
+    ];
+    for (let c of candidates) {
+      if (c && countryData[c]) return countryData[c];
+    }
+    // Name fallbacks
+    const n = (props.name || props.NAME || props.ADMIN || "").toLowerCase();
+    for (let key in countryData) {
+      if (countryData[key].name.toLowerCase() === n) return countryData[key];
+    }
+    return null;
+  }
+
+  function getColor(item) {
+    if (!item) return '#c8d6e5';
+    switch (item.type) {
+      case 1: return '#e63946'; // Red - Fatherland
+      case 2: return '#1d3557'; // Blue - Motherland
+      case 3: return '#2a9d8f'; // Green - Complicated
+      default: return '#c8d6e5';
+    }
+  }
+
+  function getCategoryName(type) {
+    switch (type) {
+      case 1: return 'Fatherland';
+      case 2: return 'Motherland';
+      case 3: return 'Complicated (e.g. feminine noun from father root)';
+      default: return 'Unclassified / Territory';
+    }
+  }
+
+  const map = L.map('map', {
+    center: [20, 0],
+    zoom: 2,
+    minZoom: 2,
+    maxZoom: 6,
+    maxBounds: [[-85, -180], [85, 180]]
+  });
+
+  const info = L.control({ position: 'topright' });
+  info.onAdd = function () {
+    this._div = L.DomUtil.create('div', 'info-panel');
+    this.update();
+    return this._div;
+  };
+  info.update = function (props) {
+    if (!props) {
+      this._div.innerHTML = '<h4>Country Classification</h4><span>Hover over a country</span>';
+      return;
+    }
+    const item = lookup(props);
+    const countryName = (item ? item.name : (props.name || props.NAME || 'Unknown'));
+    if (item) {
+      this._div.innerHTML = `
+        <h4>${countryName}</h4>
+        <b>Language:</b> ${item.lang}<br/>
+        <b>Native Term:</b> <i>${item.word}</i><br/>
+        <b>Category:</b> ${getCategoryName(item.type)}
+      `;
+    } else {
+      this._div.innerHTML = `
+        <h4>${countryName}</h4>
+        <b>Category:</b> Unclassified / Territory
+      `;
+    }
+  };
+  info.addTo(map);
+
+  let geojsonLayer;
+
+  function highlightFeature(e) {
+    const layer = e.target;
+    layer.setStyle({
+      weight: 2,
+      color: '#111',
+      fillOpacity: 0.95
+    });
+    info.update(layer.feature.properties);
+  }
+
+  function resetHighlight(e) {
+    geojsonLayer.resetStyle(e.target);
+    info.update();
+  }
+
+  function onEachFeature(feature, layer) {
+    layer.on({
+      mouseover: highlightFeature,
+      mouseout: resetHighlight
+    });
+  }
+
+  // Reliable GeoJSON without antimeridian artifacts
+  fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
+    .then(res => res.json())
+    .then(geojson => {
+      geojsonLayer = L.geoJson(geojson, {
+        style: function (feature) {
+          const item = lookup(feature.properties);
+          return {
+            fillColor: getColor(item),
+            weight: 0.8,
+            opacity: 1,
+            color: '#ffffff',
+            fillOpacity: 0.88
+          };
+        },
+        onEachFeature: onEachFeature
+      }).addTo(map);
+    });
+
+  const legend = L.control({ position: 'bottomleft' });
+  legend.onAdd = function () {
+    const div = L.DomUtil.create('div', 'legend');
+    div.innerHTML = `
+      <b>Classification</b><br/>
+      <i style="background: #e63946"></i> Fatherland (Red)<br/>
+      <i style="background: #1d3557"></i> Motherland (Blue)<br/>
+      <i style="background: #2a9d8f"></i> Complicated (Green)<br/>
+    `;
+    return div;
+  };
+  legend.addTo(map);
+</script>
+</body>
+</html>
